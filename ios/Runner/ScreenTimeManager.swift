@@ -70,12 +70,8 @@ class ScreenTimeManager: ObservableObject {
         // 屏蔽选中的具体应用
         store.shield.applications = selection.applicationTokens
 
-        // 屏蔽选中的应用类别（如社交媒体、游戏等）
-        if !selection.categoryTokens.isEmpty {
-            store.shield.applicationCategories = .all(except: Set(selection.categoryTokens))
-        } else {
-            store.shield.applicationCategories = .all()
-        }
+        // 屏蔽所有应用类别（如社交媒体、游戏等）
+        store.shield.applicationCategories = .all()
 
         print("应用屏蔽已启动: \(selection.applicationTokens.count) 个应用")
     }
@@ -99,11 +95,12 @@ class ScreenTimeManager: ObservableObject {
 
         let schedule = DeviceActivitySchedule(
             intervalStart: DateComponents(hour: startHour, minute: startMinute),
-            intervalEnd: DateComponents(hour: endHour, minute: endMinute)
+            intervalEnd: DateComponents(hour: endHour, minute: endMinute),
+            repeats: true
         )
 
         do {
-            try deviceActivityCenter.startMonitoring(schedule)
+            try deviceActivityCenter.startMonitoring(schedule, during: DateComponents())
             print("定时屏蔽计划已设置: \(startHour):\(startMinute) - \(endHour):\(endMinute)")
         } catch {
             print("设置定时计划失败: \(error)")
@@ -140,7 +137,12 @@ class ScreenTimeManager: ObservableObject {
             return
         }
 
-        let pickerView = AppPickerView(selection: $selection) { [weak self] finalSelection in
+        let pickerView = AppPickerView(
+            selection: Binding(
+                get: { self.selection },
+                set: { self.selection = $0 }
+            )
+        ) { [weak self] finalSelection in
             self?.saveSelectionToSharedStorage(finalSelection)
             completion(finalSelection)
         }
@@ -175,12 +177,7 @@ struct AppPickerView: View {
 
     var body: some View {
         NavigationView {
-            FamilyActivityPicker(
-                selection: $selection,
-                includeApplications: true,
-                includeApplicationCategories: true,
-                includeWebDomains: false
-            )
+            FamilyActivityPicker(selection: $selection)
             .navigationTitle("选择要屏蔽的应用")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
