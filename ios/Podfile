@@ -1,5 +1,5 @@
 # Uncomment the next line to define a global platform for your project
-platform :ios, '16.0'
+platform :ios, '16.2'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -44,7 +44,7 @@ post_install do |installer|
 
     # Fix deployment target for Extension targets
     target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.2'
 
       # Enable Swift version
       config.build_settings['SWIFT_VERSION'] = '5.0'
