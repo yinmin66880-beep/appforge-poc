@@ -100,7 +100,7 @@ class ScreenTimeManager: ObservableObject {
         )
 
         do {
-            try deviceActivityCenter.startMonitoring("shielding_schedule", during: schedule)
+            try deviceActivityCenter.startMonitoring(DeviceActivityName("shielding_schedule"), during: schedule)
             print("定时屏蔽计划已设置: \(startHour):\(startMinute) - \(endHour):\(endMinute)")
         } catch {
             print("设置定时计划失败: \(error)")
