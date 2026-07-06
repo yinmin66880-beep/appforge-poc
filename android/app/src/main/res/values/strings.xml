@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">防熬夜助手</string>
+    <string name="device_admin_description">防熬夜助手需要设备管理员权限，在设定时间锁定屏幕以防止熬夜使用手机。</string>
+</resources>

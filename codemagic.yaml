@@ -1,0 +1,121 @@
+# AppForge iOS PoC — Codemagic CI/CD 配置
+# 用途：在 macOS runner 上验证 Flutter iOS 项目编译通过
+# 注册免费账户即可使用：https://codemagic.io/signup
+
+workflows:
+
+  # ============================================================
+  # Workflow 1: iOS PoC 编译验证（主 App + 扩展）
+  # ============================================================
+  ios-poc-build:
+    name: iOS PoC Build Verification
+    instance_type: mac_mini_m1
+    max_build_duration: 30
+    environment:
+      flutter: 3.22.3
+      xcode: 15.4
+      cocoapods: default
+      groups:
+        - appforge-ios-poc
+      vars:
+        XCODE_PROJECT: "ios/Runner.xcodeproj"
+        XCODE_SCHEME: "Runner"
+        BUNDLE_ID: "com.appforge.anti-stay-up-late"
+    scripts:
+      # Step 1: 安装 CocoaPods 依赖
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install --repo-update
+          echo "=== Pod installation complete ==="
+
+      # Step 2: Flutter 依赖安装
+      - name: Flutter pub get
+        script: |
+          flutter clean
+          flutter pub get
+          echo "=== Flutter pub get complete ==="
+
+      # Step 3: Flutter 静态分析
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+          echo "=== Flutter analyze complete ==="
+
+      # Step 4: iOS 编译验证（Debug 模式，无需代码签名）
+      # --debug 模式构建 .app，不需要 Developer 账号
+      - name: Build iOS (Debug)
+        script: |
+          flutter build ios --debug --no-codesign 2>&1
+          BUILD_EXIT_CODE=$?
+
+          echo "=== Build exit code: $BUILD_EXIT_CODE ==="
+
+          if [ $BUILD_EXIT_CODE -eq 0 ]; then
+            echo "=== iOS BUILD SUCCESS ==="
+
+            # 检查构建产物
+            echo "=== Build artifacts ==="
+            ls -la build/ios/iphoneos/ 2>/dev/null || echo "No iphoneos directory"
+            ls -la build/ios/iphonesimulator/ 2>/dev/null || echo "No simulator directory"
+
+            # 检查 Runner.app
+            find build/ios -name "Runner.app" -type d 2>/dev/null
+          else
+            echo "=== iOS BUILD FAILED ==="
+            exit $BUILD_EXIT_CODE
+          fi
+
+      # Step 5: 测试（如果有的话）
+      - name: Run Flutter tests
+        script: |
+          flutter test
+          echo "=== Flutter tests complete ==="
+
+    artifacts:
+      - build/ios/iphoneos/Runner.app
+      - build/ios/iphonesimulator/Runner.app
+
+  # ============================================================
+  # Workflow 2: iOS Release 编译（需要 Apple Developer 账号）
+  # 用户注册 $99/年账号后启用此 workflow
+  # ============================================================
+  ios-release-build:
+    name: iOS Release Build (TestFlight)
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: 3.22.3
+      xcode: 15.4
+      cocoapods: default
+      # 自动代码签名 — 需要已在 App Store Connect 配置
+      ios_signing:
+        distribution_type: development  # 或 app_store
+    scripts:
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install --repo-update
+
+      - name: Flutter pub get
+        script: |
+          flutter clean
+          flutter pub get
+
+      - name: Flutter analyze
+        script: flutter analyze
+
+      - name: Build iOS Release
+        script: |
+          flutter build ipa --release \
+            --export-method development \
+            --build-number=$(($(git rev-list --count HEAD))) \
+            --build-name=1.0.0
+
+      - name: Generate IPA info
+        script: |
+          echo "=== IPA artifacts ==="
+          find build/ios -name "*.ipa" -exec ls -la {} \;
+
+    artifacts:
+      - build/ios/ipa/*.ipa
