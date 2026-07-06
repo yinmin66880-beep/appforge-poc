@@ -25,8 +25,8 @@ class AppDelegate: FlutterAppDelegate {
 
         if let controller = controller {
             FlutterMethodChannel(
-                binaryMessenger: controller.binaryMessenger,
-                name: channelName
+                name: channelName,
+                binaryMessenger: controller.binaryMessenger
             ).setMethodCallHandler { [weak self] call, result in
                 self?.handleMethodCall(call, result: result)
             }
