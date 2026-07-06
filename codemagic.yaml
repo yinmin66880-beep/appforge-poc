@@ -22,19 +22,18 @@ workflows:
         XCODE_SCHEME: "Runner"
         BUNDLE_ID: "com.appforge.anti-stay-up-late"
     scripts:
-      # Step 1: 安装 CocoaPods 依赖
+      # Step 1: Flutter 依赖安装（必须在 pod install 之前，生成 Generated.xcconfig）
+      - name: Flutter pub get
+        script: |
+          flutter pub get
+          echo "=== Flutter pub get complete ==="
+
+      # Step 2: 安装 CocoaPods 依赖
       - name: Install CocoaPods dependencies
         script: |
           cd ios
           pod install --repo-update
           echo "=== Pod installation complete ==="
-
-      # Step 2: Flutter 依赖安装
-      - name: Flutter pub get
-        script: |
-          flutter clean
-          flutter pub get
-          echo "=== Flutter pub get complete ==="
 
       # Step 3: Flutter 静态分析
       - name: Flutter analyze
@@ -43,8 +42,7 @@ workflows:
           echo "=== Flutter analyze complete ==="
 
       # Step 4: iOS 编译验证（Debug 模式，无需代码签名）
-      # --debug 模式构建 .app，不需要 Developer 账号
-      - name: Build iOS (Debug)
+      - name: Build iOS (Debug, no codesign)
         script: |
           flutter build ios --debug --no-codesign 2>&1
           BUILD_EXIT_CODE=$?
@@ -53,13 +51,6 @@ workflows:
 
           if [ $BUILD_EXIT_CODE -eq 0 ]; then
             echo "=== iOS BUILD SUCCESS ==="
-
-            # 检查构建产物
-            echo "=== Build artifacts ==="
-            ls -la build/ios/iphoneos/ 2>/dev/null || echo "No iphoneos directory"
-            ls -la build/ios/iphonesimulator/ 2>/dev/null || echo "No simulator directory"
-
-            # 检查 Runner.app
             find build/ios -name "Runner.app" -type d 2>/dev/null
           else
             echo "=== iOS BUILD FAILED ==="
@@ -92,15 +83,14 @@ workflows:
       ios_signing:
         distribution_type: development  # 或 app_store
     scripts:
+      - name: Flutter pub get
+        script: |
+          flutter pub get
+
       - name: Install CocoaPods dependencies
         script: |
           cd ios
           pod install --repo-update
-
-      - name: Flutter pub get
-        script: |
-          flutter clean
-          flutter pub get
 
       - name: Flutter analyze
         script: flutter analyze

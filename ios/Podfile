@@ -38,24 +38,6 @@ target 'Runner' do
   end
 end
 
-# LockStatusWidget Extension target
-# Note: Must be manually added to Xcode project via:
-#   File → New → Target → Widget Extension → LockStatusWidget
-#   Then replace generated files with our LockStatusWidget.swift
-target 'LockStatusWidget' do
-  use_frameworks!
-  use_modular_headers!
-end
-
-# DeviceActivityMonitorExtension target
-# Note: Must be manually added to Xcode project via:
-#   File → New → Target → DeviceActivityMonitor Extension
-#   Then replace generated files with our DeviceActivityMonitorExtension.swift
-target 'DeviceActivityMonitorExtension' do
-  use_frameworks!
-  use_modular_headers!
-end
-
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
